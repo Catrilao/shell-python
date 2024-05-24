@@ -3,7 +3,7 @@ import sys
 
 RED = "\033[91m"
 RESET = "\033[0m"
-EXIT = "exit"
+EXIT = "exit 0"
 
 
 def main():
