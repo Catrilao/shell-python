@@ -1,4 +1,5 @@
 import sys
+import os
 
 # Coloring for highlighting
 RED = "\033[91m"
@@ -6,7 +7,7 @@ RESET = "\033[0m"
 
 
 def echo(*args):
-    print("".join(" ".join(args)))
+    print(" ".join(args))
 
 
 def exit(*args):
@@ -19,12 +20,20 @@ def exit(*args):
 def type(*args):
     if len(args) == 0:
         print("Not enough arguments")
-    elif args[0] in COMMANDS:
-        command = f"{RED}{args[0]}{RESET}"
-        builtin = f"{RED}builtin{RESET}"
-        print(f"{command} is a shell {builtin}")
+        return
+
+    command = args[0]
+    if command in COMMANDS:
+        print(f"{RED}{command}{RESET} is a shell {RED}builtin{RESET}")
     else:
-        print(f"{args[0]} not found")
+        input_path = os.environ.get("PATH").split(":")
+        for dir in input_path:
+            command_path = os.path.join(dir, command)
+            if os.path.isfile(command_path):
+                if os.access(command_path, os.X_OK):
+                    print(f"{RED}{command}{RESET} is {command_path}")
+                return
+        print(f"{command}: not found")
 
 
 # Available commands
