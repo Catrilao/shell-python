@@ -25,15 +25,39 @@ def type(*args):
     command = args[0]
     if command in COMMANDS:
         print(f"{RED}{command}{RESET} is a shell {RED}builtin{RESET}")
-    else:
-        input_path = os.environ.get("PATH").split(":")
-        for dir in input_path:
-            command_path = os.path.join(dir, command)
-            if os.path.isfile(command_path):
-                if os.access(command_path, os.X_OK):
-                    print(f"{RED}{command}{RESET} is {command_path}")
-                return
-        print(f"{command}: not found")
+        return
+
+    command_path = search_executable(command)
+    if command_path is not None:
+        print(f"{RED}{command}{RESET} is {command_path}")
+        return
+    print(f"{command}: not found")
+
+
+def search_executable(command):
+    input_path = os.environ.get("PATH").split(":")
+    for dir in input_path:
+        command_path = os.path.join(dir, command)
+        if os.path.isfile(command_path):
+            if os.access(command_path, os.X_OK):
+                return command_path
+
+
+def execute_program(cmd, *args):
+    print(f"Execute {cmd} with arguments: \n {"".join(args)}")
+    command_path = search_executable(cmd)
+    if command_path is not None:
+        os.system(f"{command_path} {' '.join(args)}")
+        return
+    print(f"{cmd}: not found")
+
+
+def default(command):
+    command_path = search_executable(command)
+    if command_path is not None:
+        print(f"{RED}{command}{RESET} is {command_path}")
+        return
+    print(f"{command}: {RED}command{RESET} not found")
 
 
 # Available commands
@@ -41,6 +65,8 @@ COMMANDS = {
     "echo": echo,
     "exit": exit,
     "type": type,
+    "default": default,
+    "execute": execute_program,
 }
 
 
@@ -57,9 +83,10 @@ def main():
             # Execute command
             COMMANDS[cmd](*args)
         except KeyError:
-            # Command not found
-            red_commmand = f"{RED}command{RESET}"
-            print(f"{cmd}: {red_commmand} not found")
+            if len(args) == 0:
+                COMMANDS["default"](cmd)
+            else:
+                COMMANDS["execute"](cmd, *args)
 
 
 if __name__ == "__main__":
