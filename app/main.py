@@ -47,17 +47,15 @@ def execute_program(cmd, *args):
     print(f"Execute {cmd} with arguments: \n {"".join(args)}")
     command_path = search_executable(cmd)
     if command_path is not None:
-        os.system(f"{command_path} {' '.join(args)}")
+        os.system(f"{command_path} {" ".join(args)}")
         return
     print(f"{cmd}: not found")
 
 
 def default(command):
     command_path = search_executable(command)
-    if command_path is not None:
-        print(f"{RED}{command}{RESET} is {command_path}")
-        return
-    print(f"{command}: {RED}command{RESET} not found")
+    if command_path is None:
+        print(f"{command}: {RED}command{RESET} not found")
 
 
 # Available commands
@@ -65,8 +63,8 @@ COMMANDS = {
     "echo": echo,
     "exit": exit,
     "type": type,
-    "default": default,
     "execute": execute_program,
+    "default": default,
 }
 
 
@@ -83,10 +81,10 @@ def main():
             # Execute command
             COMMANDS[cmd](*args)
         except KeyError:
-            if len(args) == 0:
-                COMMANDS["default"](cmd)
-            else:
+            if len(args) > 0:
                 COMMANDS["execute"](cmd, *args)
+            else:
+                COMMANDS["default"](cmd)
 
 
 if __name__ == "__main__":
