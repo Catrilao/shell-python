@@ -48,6 +48,10 @@ def pwd():
     print(os.getcwd())
 
 
+def cd(*args):
+    print("cd")
+
+
 def execute_program(cmd, *args):
     command_path = search_executable(cmd)
     if command_path is not None:
@@ -68,6 +72,7 @@ COMMANDS = {
     "exit": exit,
     "type": type,
     "pwd": pwd,
+    "cd": cd,
     "execute": execute_program,
     "default": default,
 }
