@@ -48,14 +48,13 @@ def pwd():
     print(os.getcwd())
 
 
-def cd(*args):
-    path = "".join(args)
+def cd(directory: str) -> None:
+    directory = "".join(directory)
 
-    if os.access(path, os.F_OK):
-        os.chdir(path)
-        return
-
-    print(f"{path}: No such {RED}file{RESET} or directory")
+    if not os.path.exists(directory):
+        print(f"{directory}: No such {RED}file{RESET} or directory")
+    elif os.access(directory, os.F_OK):
+        os.chdir(directory)
 
 
 def execute_program(cmd, *args):
