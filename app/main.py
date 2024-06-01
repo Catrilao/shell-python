@@ -41,10 +41,14 @@ def search_executable(command):
         if os.path.isfile(command_path):
             if os.access(command_path, os.X_OK):
                 return command_path
+    return None
+
+
+def pwd():
+    print(os.getcwd())
 
 
 def execute_program(cmd, *args):
-    print(f"Execute {cmd} with arguments: \n {"".join(args)}")
     command_path = search_executable(cmd)
     if command_path is not None:
         os.system(f"{command_path} {" ".join(args)}")
@@ -63,6 +67,7 @@ COMMANDS = {
     "echo": echo,
     "exit": exit,
     "type": type,
+    "pwd": pwd,
     "execute": execute_program,
     "default": default,
 }
