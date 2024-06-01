@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 
 # Coloring for highlighting
 RED = "\033[91m"
@@ -34,7 +35,7 @@ def type(*args):
     print(f"{command}: not found")
 
 
-def search_executable(command):
+def search_executable(command: str) -> bool:
     input_path = os.environ.get("PATH").split(":")
     for dir in input_path:
         command_path = os.path.join(dir, command)
@@ -48,10 +49,15 @@ def pwd():
     print(os.getcwd())
 
 
-def cd(directory: str) -> None:
-    directory = "".join(directory)
+def cd(directory_arg: str) -> None:
+    directory = "".join(directory_arg)
 
-    if not os.path.exists(directory):
+    if directory.startswith("~/"):
+        directory = directory.replace("~", str(Path.home()))
+
+    if directory == "~":
+        os.chdir(Path.home())
+    elif not os.path.exists(directory):
         print(f"{directory}: No such {RED}file{RESET} or directory")
     elif os.access(directory, os.F_OK):
         os.chdir(directory)
@@ -65,7 +71,7 @@ def execute_program(cmd, *args):
     print(f"{cmd}: not found")
 
 
-def default(command):
+def default(command: str) -> str:
     command_path = search_executable(command)
     if command_path is None:
         print(f"{command}: {RED}command{RESET} not found")
