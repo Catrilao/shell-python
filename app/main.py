@@ -49,7 +49,13 @@ def pwd():
 
 
 def cd(*args):
-    print("cd")
+    path = "".join(args)
+
+    if os.access(path, os.F_OK):
+        os.chdir(path)
+        return
+
+    print(f"{path}: No such {RED}file{RESET} or directory")
 
 
 def execute_program(cmd, *args):
