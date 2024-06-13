@@ -3,4 +3,5 @@
     "python.analysis.autoIndent": true,
     "python.analysis.inlayHints.variableTypes": true,
     "python.analysis.typeCheckingMode": "strict",
+    "autoDocstring.docstringFormat": "numpy"
 }

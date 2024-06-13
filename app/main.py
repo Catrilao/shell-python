@@ -10,10 +10,12 @@ RESET = "\033[0m"
 
 
 def echo(*args: str) -> None:
+    """Prints the arguments given."""
     print(" ".join(args))
 
 
 def exit(*args: str) -> None:
+    """Exit the program if the arguments is 0."""
     if len(args) == 0:
         print("Not enough arguments")
     elif str(args[0]) == "0":
@@ -21,6 +23,7 @@ def exit(*args: str) -> None:
 
 
 def type(*args: str) -> None:
+    """Prints the type of a given command."""
     if len(args) == 0:
         print("Not enough arguments")
         return
@@ -39,6 +42,18 @@ def type(*args: str) -> None:
 
 
 def search_executable(command: str) -> str:
+    """Search for an executable file in the system's PATH.
+
+    Parameters
+    ----------
+    command : str
+        The file that is to be searched.
+
+    Returns
+    -------
+    str
+        Path to the executable file if found, "" otherwise.
+    """
     input_path: list[str] = os.environ.get("PATH", "").split(":")
     for dir in input_path:
         command_path: str = os.path.join(dir, command)
@@ -49,10 +64,18 @@ def search_executable(command: str) -> str:
 
 
 def pwd() -> None:
+    """Prints the current working directory"""
     print(os.getcwd())
 
 
 def cd(directory: str = "") -> None:
+    """Goes to the specified directory, if not directory is given goes to home.
+
+    Parameters
+    ----------
+    directory : str, optional
+        Path to the given directory, by default ""
+    """
     directory = directory.replace("~", str(Path.home()))
 
     if not directory:
@@ -65,6 +88,7 @@ def cd(directory: str = "") -> None:
 
 
 def execute_program(cmd: str, *args: str) -> None:
+    """Executes a program with the given arguments."""
     command_path: str = search_executable(cmd)
     if command_path != "":
         subprocess.run(f"{command_path} {' '.join(args)}")
@@ -73,6 +97,13 @@ def execute_program(cmd: str, *args: str) -> None:
 
 
 def default(command: str) -> None:
+    """Prints an error message if the command is not found.
+
+    Parameters
+    ----------
+    command : str
+        The command to be executed.
+    """
     command_path: str = search_executable(command)
     if command_path == "":
         print(f"{command}: {RED}command{RESET} not found")
