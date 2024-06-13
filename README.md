@@ -53,7 +53,7 @@ In this project, I've developed a basic shell that can handle built-in commands 
 2. **Start the Shell**:
 
    ```sh
-   python app/main.py
+   ./your_shell.sh
    ```
 
 3. **Try It Out**:
