@@ -1,3 +1,4 @@
+import readline
 import subprocess
 import sys
 import os
@@ -8,21 +9,37 @@ from typing import Any, Callable
 RED = "\033[91m"
 RESET = "\033[0m"
 
+# Command history and auto-completion setup
+readline.parse_and_bind("tab: complete")
+history_file: str = os.path.expanduser("~/.pysh_history")
+
+
+def load_history():
+    """Load command history from the history file if it exists."""
+    if os.path.exists(history_file):
+        readline.read_history_file(history_file)
+
+
+def save_history():
+    """Save the current session's command history to the history file."""
+    readline.write_history_file(history_file)
+
+
+load_history()
+
 
 def echo(*args: str) -> None:
     """Prints the arguments given."""
     print(" ".join(args))
 
 
-def exit(*args: str) -> None:
-    """Exit the program if the arguments is 0."""
-    if len(args) == 0:
-        print("Not enough arguments")
-    elif str(args[0]) == "0":
-        sys.exit()
+def exit_shell(*args: str) -> None:
+    """Exit the program."""
+    save_history()
+    sys.exit()
 
 
-def type(*args: str) -> None:
+def type_shell(*args: str) -> None:
     """Prints the type of a given command."""
     if len(args) == 0:
         print("Not enough arguments")
@@ -33,34 +50,14 @@ def type(*args: str) -> None:
         print(f"{RED}{command}{RESET} is a shell {RED}builtin{RESET}")
         return
 
-    command_path: str = search_executable(command)
-    if command_path != "":
-        print(f"{RED}{command}{RESET} is {command_path}")
-        return
-
-    print(f"{command}: not found")
-
-
-def search_executable(command: str) -> str:
-    """Search for an executable file in the system's PATH.
-
-    Parameters
-    ----------
-    command : str
-        The file that is to be searched.
-
-    Returns
-    -------
-    str
-        Path to the executable file if found, "" otherwise.
-    """
     input_path: list[str] = os.environ.get("PATH", "").split(":")
     for dir in input_path:
         command_path: str = os.path.join(dir, command)
-        if os.path.isfile(command_path):
-            if os.access(command_path, os.X_OK):
-                return command_path
-    return ""
+        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+            print(f"{RED}{command}{RESET} is {command_path}")
+            return
+
+    print(f"{command}: not found")
 
 
 def pwd() -> None:
@@ -69,7 +66,7 @@ def pwd() -> None:
 
 
 def cd(directory: str = "") -> None:
-    """Goes to the specified directory, if not directory is given goes to home.
+    """Change to the specified directory, or home if none is specified.
 
     Parameters
     ----------
@@ -81,43 +78,39 @@ def cd(directory: str = "") -> None:
     if not directory:
         directory = str(Path.home())
 
-    if not os.path.exists(directory):
-        print(f"{directory}: No such {RED}file{RESET} or directory")
-    elif os.access(directory, os.F_OK):
+    try:
         os.chdir(directory)
+    except FileNotFoundError:
+        print(f"{directory}: No such {RED}file{RESET} or directory")
+    except PermissionError:
+        print(f"{directory}: {RED}Permission{RESET} denied")
+    except Exception as e:
+        print(f"Error changing directory: {e}")
 
 
 def execute_program(cmd: str, *args: str) -> None:
     """Executes a program with the given arguments."""
-    command_path: str = search_executable(cmd)
-    if command_path != "":
-        subprocess.run(f"{command_path} {' '.join(args)}")
-        return
+    input_path: list[str] = os.environ.get("PATH", "").split(":")
+    for dir in input_path:
+        command_path: str = os.path.join(dir, cmd)
+        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+            try:
+                subprocess.run([command_path, *args])
+            except FileNotFoundError:
+                print(f"File '{' '.join(args)}' not found")
+            return
+
     print(f"{cmd}: not found")
-
-
-def default(command: str) -> None:
-    """Prints an error message if the command is not found.
-
-    Parameters
-    ----------
-    command : str
-        The command to be executed.
-    """
-    command_path: str = search_executable(command)
-    if command_path == "":
-        print(f"{command}: {RED}command{RESET} not found")
 
 
 # Available commands
 COMMANDS: dict[str, Callable[..., Any]] = {
     "echo": echo,
-    "exit": exit,
-    "type": type,
+    "exit": exit_shell,
+    "type": type_shell,
     "pwd": pwd,
     "cd": cd,
-    "execute": execute_program,
-    "default": default,
+    "default": execute_program,
 }
 
 
@@ -126,18 +119,24 @@ def main():
         sys.stdout.write("$ ")
         sys.stdout.flush()
 
-        # Wait for user input
-        command: str = input()
-        cmd, *args = command.split()
-
         try:
-            # Execute command
-            COMMANDS[cmd](*args)
-        except KeyError:
-            if len(args) > 0:
-                COMMANDS["execute"](cmd, *args)
+            # Wait for user input
+            command: str = input()
+
+            if not command:
+                continue
+
+            cmd, *args = command.split()
+
+            if cmd in COMMANDS:
+                # Execute command
+                COMMANDS[cmd](*args)
             else:
-                COMMANDS["default"](cmd)
+                COMMANDS["default"](cmd, *args)
+        except KeyboardInterrupt:
+            print("Type 'exit'  to quit.")
+        except EOFError:
+            exit()
 
 
 if __name__ == "__main__":
