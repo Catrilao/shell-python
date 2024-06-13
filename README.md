@@ -39,7 +39,7 @@ In this project, I've developed a basic shell that can handle built-in commands 
 
 ### Prerequisites
 
-- Python 3.11 or higher.
+- Python 3.11+.
 
 ### Running the Shell
 
@@ -59,7 +59,7 @@ In this project, I've developed a basic shell that can handle built-in commands 
 3. **Try It Out**:
    Once the shell is running, you can enter commands as you would in any terminal. Here are some commands you can try:
    ```sh
-   $ echo "Hello from my custom shell!"
+   $ echo "Hello world!"
    $ pwd
    $ cd /some/directory
    $ type ls
