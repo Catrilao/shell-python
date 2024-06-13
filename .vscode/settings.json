@@ -1,2 +1,6 @@
 {
+    "editor.fontSize": 13,
+    "python.analysis.autoIndent": true,
+    "python.analysis.inlayHints.variableTypes": true,
+    "python.analysis.typeCheckingMode": "strict",
 }
