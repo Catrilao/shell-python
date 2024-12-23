@@ -30,7 +30,7 @@ def echo(args: str) -> None:
             continue
 
         for word in group.split():
-            kwargs += " " + word
+            kwargs += " " + word.replace("\\", "")
 
     print(kwargs.removeprefix(" "))
 
