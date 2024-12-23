@@ -1,4 +1,3 @@
-from ast import arg
 import re
 import subprocess
 import sys
@@ -13,25 +12,34 @@ RESET = "\033[0m"
 
 def echo(args: str) -> None:
     """Prints the arguments given."""
-    tmp = ""
+    kwargs = ""
     args_stripped = args.strip()
 
-    parts = re.finditer(r"'([^']*)'|[^']+", args_stripped)
+    pattern = r"('([^']*)'|\"([^\"]*)\")|[^'\" ]+"
+    groups_args = re.finditer(pattern, args_stripped)
 
-    for match in parts:
+    for match in groups_args:
         group = match.group(0)
+
         if group.startswith("'") and group.endswith("'"):
-            tmp += " " + group.strip("'")
+            kwargs += " " + group.strip("'")
+            continue
+
+        if group.startswith('"') and group.endswith('"'):
+            kwargs += " " + group.strip('"')
             continue
 
         for word in group.split():
-            tmp += " " + word
+            kwargs += " " + word
 
-    print(tmp.removeprefix(" "))
+    print(kwargs.removeprefix(" "))
 
 
 def exit_shell(args: str) -> None:
     """Exit the program."""
+    if len(args) == 0:
+        print("Use: exit <code>")
+        return
     sys.exit(int(args))
 
 
@@ -56,8 +64,11 @@ def type_shell(*args: str) -> None:
     print(f"{command}: not found")
 
 
-def pwd() -> None:
+def pwd(args: str) -> None:
     """Prints the current working directory"""
+    if len(args) > 0:
+        print(f"{RED}pwd{RESET}: too many arguments")
+        return
     print(os.getcwd())
 
 
@@ -100,16 +111,27 @@ def execute_program(cmd: str, args: str) -> None:
         command_path: str = os.path.join(dir, cmd)
         if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
             args_stripped = args.strip()
-            groups_args = re.finditer(r"'([^']*)'|[^']+", args_stripped)
+            pattern = r"('([^']*)'|\"([^\"]*)\")|[^'\" ]+"
+            groups_args = re.finditer(pattern, args_stripped)
+            kwargs = ""
 
             for match in groups_args:
-                group = match.group(0).strip("'")
-                if group.isspace():
+                group = match.group(0)
+
+                if group.isspace() or len(group) == 0:
                     continue
+
+                kwargs = group
+
+                if group.startswith("'") and group.endswith("'"):
+                    kwargs = group.strip("'")
+                elif group.startswith('"') and group.endswith('"'):
+                    kwargs = group.strip('"')
+
                 try:
-                    subprocess.run([command_path, group])
+                    subprocess.run([command_path, kwargs])
                 except FileNotFoundError:
-                    print(f"File '{' '.join(group)}' not found")
+                    print(f"File '{' '.join(kwargs)}' not found")
             return
 
     print(f"{cmd}: command not found")
@@ -141,10 +163,7 @@ def main():
             cmd, _, args = command.partition(" ")
 
             if cmd in COMMANDS:
-                if args:
-                    COMMANDS[cmd](args)
-                else:
-                    COMMANDS[cmd]()
+                COMMANDS[cmd](args)
             else:
                 COMMANDS["default"](cmd, args)
         except KeyboardInterrupt:
