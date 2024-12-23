@@ -1,4 +1,5 @@
-import readline
+from ast import arg
+import re
 import subprocess
 import sys
 import os
@@ -9,34 +10,29 @@ from typing import Any, Callable
 RED = "\033[91m"
 RESET = "\033[0m"
 
-# Command history and auto-completion setup
-readline.parse_and_bind("tab: complete")
-history_file: str = os.path.expanduser("~/.pysh_history")
 
-
-def load_history():
-    """Load command history from the history file if it exists."""
-    if os.path.exists(history_file):
-        readline.read_history_file(history_file)
-
-
-def save_history():
-    """Save the current session's command history to the history file."""
-    readline.write_history_file(history_file)
-
-
-load_history()
-
-
-def echo(*args: str) -> None:
+def echo(args: str) -> None:
     """Prints the arguments given."""
-    print(" ".join(args))
+    tmp = ""
+    args_stripped = args.strip()
+
+    parts = re.finditer(r"'([^']*)'|[^']+", args_stripped)
+
+    for match in parts:
+        group = match.group(0)
+        if group.startswith("'") and group.endswith("'"):
+            tmp += " " + group.strip("'")
+            continue
+
+        for word in group.split():
+            tmp += " " + word
+
+    print(tmp.removeprefix(" "))
 
 
-def exit_shell(*args: str) -> None:
+def exit_shell(args: str) -> None:
     """Exit the program."""
-    save_history()
-    sys.exit()
+    sys.exit(int(args))
 
 
 def type_shell(*args: str) -> None:
@@ -88,19 +84,35 @@ def cd(directory: str = "") -> None:
         print(f"Error changing directory: {e}")
 
 
-def execute_program(cmd: str, *args: str) -> None:
-    """Executes a program with the given arguments."""
+def execute_program(cmd: str, args: str) -> None:
+    """Executes a program with the given arguments.
+
+    Parameters
+    ----------
+    cmd : str
+        Command that is going to be executed.
+
+    args : list[str], optional
+        Arguments of the command.
+    """
     input_path: list[str] = os.environ.get("PATH", "").split(":")
     for dir in input_path:
         command_path: str = os.path.join(dir, cmd)
         if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
-            try:
-                subprocess.run([command_path, *args])
-            except FileNotFoundError:
-                print(f"File '{' '.join(args)}' not found")
+            args_stripped = args.strip()
+            groups_args = re.finditer(r"'([^']*)'|[^']+", args_stripped)
+
+            for match in groups_args:
+                group = match.group(0).strip("'")
+                if group.isspace():
+                    continue
+                try:
+                    subprocess.run([command_path, group])
+                except FileNotFoundError:
+                    print(f"File '{' '.join(group)}' not found")
             return
 
-    print(f"{cmd}: not found")
+    print(f"{cmd}: command not found")
 
 
 # Available commands
@@ -126,13 +138,15 @@ def main():
             if not command:
                 continue
 
-            cmd, *args = command.split()
+            cmd, _, args = command.partition(" ")
 
             if cmd in COMMANDS:
-                # Execute command
-                COMMANDS[cmd](*args)
+                if args:
+                    COMMANDS[cmd](args)
+                else:
+                    COMMANDS[cmd]()
             else:
-                COMMANDS["default"](cmd, *args)
+                COMMANDS["default"](cmd, args)
         except KeyboardInterrupt:
             print("Type 'exit'  to quit.")
         except EOFError:
