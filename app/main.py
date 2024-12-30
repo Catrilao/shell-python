@@ -10,29 +10,34 @@ RED = "\033[91m"
 RESET = "\033[0m"
 
 
-def echo(args: str) -> None:
+def echo(raw_input: str) -> None:
     """Prints the arguments given."""
-    kwargs = ""
-    args_stripped = args.strip()
+    result = ""
+    pattern = r"('([^']*)'|\"([^\"]*)\"+\s?)|(\S+\s?)"
+    matches = re.finditer(pattern, raw_input.strip())
 
-    pattern = r"('([^']*)'|\"([^\"]*)\")|[^'\" ]+"
-    groups_args = re.finditer(pattern, args_stripped)
-
-    for match in groups_args:
+    for match in matches:
         group = match.group(0)
 
         if group.startswith("'") and group.endswith("'"):
-            kwargs += " " + group.strip("'")
+            result += group.strip("'")
             continue
 
-        if group.startswith('"') and group.endswith('"'):
-            kwargs += " " + group.strip('"')
-            continue
+        idx = 0
+        is_escape_char = True
+        while idx < len(group):
+            if group[idx] in ["\\", '"']:
+                if group[idx - 1] == "\\" and is_escape_char and idx != 0:
+                    result += group[idx]
+                    if group[idx] == "\\":
+                        is_escape_char = False
+                idx += 1
+                continue
 
-        for word in group.split():
-            kwargs += " " + word.replace("\\", "")
+            result += group[idx]
+            idx += 1
 
-    print(kwargs.removeprefix(" "))
+    print(result)
 
 
 def exit_shell(args: str) -> None:
@@ -106,32 +111,33 @@ def execute_program(cmd: str, args: str) -> None:
     args : list[str], optional
         Arguments of the command.
     """
-    input_path: list[str] = os.environ.get("PATH", "").split(":")
-    for dir in input_path:
-        command_path: str = os.path.join(dir, cmd)
-        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
-            args_stripped = args.strip()
-            pattern = r"('([^']*)'|\"([^\"]*)\")|[^'\" ]+"
-            groups_args = re.finditer(pattern, args_stripped)
-            kwargs = ""
+    search_path: list[str] = os.environ.get("PATH", "").split(":")
 
-            for match in groups_args:
+    for dir in search_path:
+        executable: str = os.path.join(dir, cmd)
+
+        if os.path.isfile(executable) and os.access(executable, os.X_OK):
+            pattern = r"('([^']*)'|\"([^\"]*)\")|[^'\" ]+"
+            matches = re.finditer(pattern, args.strip())
+            current_argument = ""
+
+            for match in matches:
                 group = match.group(0)
 
                 if group.isspace() or len(group) == 0:
                     continue
 
-                kwargs = group
+                current_argument = group
 
                 if group.startswith("'") and group.endswith("'"):
-                    kwargs = group.strip("'")
+                    current_argument = group.strip("'")
                 elif group.startswith('"') and group.endswith('"'):
-                    kwargs = group.strip('"')
+                    current_argument = group.strip('"')
 
                 try:
-                    subprocess.run([command_path, kwargs])
+                    subprocess.run([executable, current_argument])
                 except FileNotFoundError:
-                    print(f"File '{' '.join(kwargs)}' not found")
+                    print(f"File '{' '.join(current_argument)}' not found")
             return
 
     print(f"{cmd}: command not found")
