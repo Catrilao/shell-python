@@ -5,10 +5,6 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
-# Coloring for highlighting
-RED = "\033[91m"
-RESET = "\033[0m"
-
 
 def echo(raw_input: str) -> None:
     """Prints the arguments given."""
@@ -56,14 +52,14 @@ def type_shell(*args: str) -> None:
 
     command: str = args[0]
     if command in COMMANDS:
-        print(f"{RED}{command}{RESET} is a shell {RED}builtin{RESET}")
+        print(f"{command} is a shell builtin")
         return
 
     input_path: list[str] = os.environ.get("PATH", "").split(":")
     for dir in input_path:
         command_path: str = os.path.join(dir, command)
         if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
-            print(f"{RED}{command}{RESET} is {command_path}")
+            print(f"{command} is {command_path}")
             return
 
     print(f"{command}: not found")
@@ -72,7 +68,7 @@ def type_shell(*args: str) -> None:
 def pwd(args: str) -> None:
     """Prints the current working directory"""
     if len(args) > 0:
-        print(f"{RED}pwd{RESET}: too many arguments")
+        print("pwd: too many arguments")
         return
     print(os.getcwd())
 
@@ -95,7 +91,7 @@ def cd(directory: str = "") -> None:
     except FileNotFoundError:
         print(f"{directory}: No such file or directory")
     except PermissionError:
-        print(f"{directory}: {RED}Permission{RESET} denied")
+        print(f"{directory}: Permission denied")
     except Exception as e:
         print(f"Error changing directory: {e}")
 
