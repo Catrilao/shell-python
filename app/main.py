@@ -93,7 +93,7 @@ def cd(directory: str = "") -> None:
     try:
         os.chdir(directory)
     except FileNotFoundError:
-        print(f"{directory}: No such {RED}file{RESET} or directory")
+        print(f"{directory}: No such file or directory")
     except PermissionError:
         print(f"{directory}: {RED}Permission{RESET} denied")
     except Exception as e:
@@ -166,12 +166,21 @@ def main():
             if not command:
                 continue
 
-            cmd, _, args = command.partition(" ")
+            pattern = r"('([^']*)'|\"([^\"]*)\"|([^'\"\s]+))"
+            match = re.match(pattern, command).group(0)
+            separator = match
+
+            if match.startswith("'") and match.endswith("'"):
+                separator = match.strip("'")
+            elif match.startswith('"') and match.endswith('"'):
+                separator = match.strip('"')
+
+            _, cmd, args = command.partition(separator)
 
             if cmd in COMMANDS:
-                COMMANDS[cmd](args)
+                COMMANDS[cmd](args.strip())
             else:
-                COMMANDS["default"](cmd, args)
+                COMMANDS["default"](cmd, args.strip())
         except KeyboardInterrupt:
             print("Type 'exit'  to quit.")
         except EOFError:
